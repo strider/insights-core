@@ -166,6 +166,11 @@ class InsightsConnection(object):
             for conn in conns:
                 connection = conns[conn]
                 connection.proxy_headers = auth_map
+
+        if self.config.new_prod_cluster:
+            # OSD v4 testing
+            cookie = requests.cookies.create_cookie('x-rh-prod-v4', '1', domain='.cloud.redhat.com')
+            session.cookies.set_cookie(cookie)
         return session
 
     @property
