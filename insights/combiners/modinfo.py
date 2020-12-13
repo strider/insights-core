@@ -9,6 +9,7 @@ indexed by the module name.
 
 from insights.core.plugins import combiner
 from insights.parsers.modinfo import ModInfoEach, ModInfoAll
+from insights.parsr.query import from_dict
 from insights import SkipComponent
 
 
@@ -50,9 +51,10 @@ class ModInfo(dict):
         self.retpoline_y = set()
         self.retpoline_n = set()
         if mi_all:
-            self.update(mi_all)
-            self.retpoline_y = mi_all.retpoline_y
-            self.retpoline_n = mi_all.retpoline_n
+            for m in mi_all:
+                self.update(m)
+                self.retpoline_y |= m.retpoline_y
+                self.retpoline_n |= m.retpoline_n
         else:
             for m in mi_each:
                 name = m.module_name
@@ -62,6 +64,14 @@ class ModInfo(dict):
 
         if len(self) == 0:
             raise SkipComponent("No Parsed Contents")
+        self._query = None
+
+    @property
+    def query(self):
+        if self._query is None:
+            results = [v for _, v in self.items()]
+            self._query = from_dict({"modules": results})
+        return self._query
 
     @property
     def data(self):

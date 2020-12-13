@@ -110,6 +110,7 @@ Examples:
 """
 
 from .. import Parser, parser, get_active_lines
+from insights.parsr.query import from_dict
 from insights.specs import Specs
 
 
@@ -256,7 +257,7 @@ class MemInfo(Parser):
 
     def __init__(self, context):
         super(MemInfo, self).__init__(context)
-        sub_classes = {
+        self.sub_classes = {
             "anon": AnonMemInfo(self.data),
             "file": FileMemInfo(self.data),
             "swap": SwapMemInfo(self.data),
@@ -267,10 +268,12 @@ class MemInfo(Parser):
             "cma": CmaMemInfo(self.data),
             "direct_map": DirectMapMemInfo(self.data)
         }
-        for name, cls in sub_classes.items():
+        for name, cls in self.sub_classes.items():
             setattr(self, name, cls)
         for meminfo_key, k in self.mem_keys:
             setattr(self, k, self.data.get(meminfo_key))
+
+        self._query = None
 
     def parse_content(self, content):
         self.data = {}
@@ -282,6 +285,26 @@ class MemInfo(Parser):
                 self.data[key.strip().lower()] = int(value.split()[0])
             else:
                 self.data[key.strip().lower()] = int(value.split()[0]) * 1024
+
+    @property
+    def query(self):
+        if self._query is None:
+            res = {}
+            for key in self.sub_classes:
+                try:
+                    res[key] = getattr(self, key).data
+                except AttributeError:
+                    pass
+
+            for _, key in self.mem_keys:
+                try:
+                    res[key] = getattr(self, key)
+                except AttributeError:
+                    pass
+
+            self._query = from_dict(res)
+
+        return self._query
 
     @property
     def used(self):

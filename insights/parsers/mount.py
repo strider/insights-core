@@ -42,6 +42,7 @@ import os
 from insights.specs import Specs
 from insights.parsers import optlist_to_dict, keyword_search, ParseException, SkipException
 from insights import parser, get_active_lines, CommandParser
+from insights.parsr.query import from_dict
 
 
 class AttributeAsDict(object):
@@ -133,6 +134,24 @@ class MountedFileSystems(CommandParser):
 
         if '/' not in self.mounts:
             raise ParseException("Input for mount must contain '/' mount point.")
+
+        self._query = None
+
+    @property
+    def query(self):
+        if self._query is None:
+            def to_queryable(mnts):
+                def fix(obj):
+                    if isinstance(obj, AttributeAsDict):
+                        return {k: fix(v) for k, v in obj.items()}
+                    elif isinstance(obj, list):
+                        return [fix(v) for v in obj]
+                    else:
+                        return obj
+
+                return from_dict({"mounts": [fix(r) for r in mnts.rows]})
+            self._query = to_queryable(self)
+        return self._query
 
     def get_dir(self, path):
         """
@@ -312,4 +331,4 @@ def _customized_split(raw, l, sep=None, num=2, reverse=False, check=True):
             line_sp = l.rsplit(sep, num - 1)
         if check and len(line_sp) < num:
             raise ParseException('Unable to parse: "{0}"'.format(raw))
-    return line_sp
+        return line_sp

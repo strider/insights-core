@@ -37,6 +37,7 @@ Examples:
 """
 
 from .. import parser, CommandParser
+from insights.parsr.query import from_dict
 from insights.specs import Specs
 
 
@@ -68,3 +69,15 @@ class LsMod(CommandParser):
                         mod_attrs[key] = line_split[i + 1]
                     module_dict[line_split[0]] = mod_attrs
         self.data = module_dict
+        self._query = None
+
+    @property
+    def query(self):
+        if self._query is None:
+            res = []
+            for k, v in self.data.items():
+                d = v.copy()
+                d["name"] = k
+                res.append(d)
+            self._query = from_dict({"modules": res})
+        return self._query

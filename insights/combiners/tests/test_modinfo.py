@@ -121,7 +121,7 @@ def test_modinfo_all():
     modinfo_vmxnet3 = ModInfoEach(context_wrap(MODINFO_VMXNET3))
     modinfo_veth = ModInfoEach(context_wrap(MODINFO_VETH))
     comb = ModInfo(
-            ModInfoAll(context),
+            [ModInfoAll(context)],
             [
                 modinfo_i40e,
                 modinfo_intel,

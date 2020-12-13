@@ -28,11 +28,10 @@ ProcNsat - File ``/proc/net/netstat``
 """
 
 from collections import defaultdict
-from insights.parsers import keyword_search
+from insights import Parser, parser, LegacyItemAccess, CommandParser
+from insights.parsers import SkipException, ParseException, parse_delimited_table, keyword_search
+from insights.parsr.query import from_dict
 from insights.specs import Specs
-from insights import Parser
-from insights.parsers import SkipException, ParseException, parse_delimited_table
-from insights import parser, LegacyItemAccess, CommandParser
 
 
 ACTIVE_INTERNET_CONNECTIONS = 'Active Internet connections (servers and established)'
@@ -476,6 +475,13 @@ class Netstat(CommandParser):
         self.data = dict((s.name, s._merge_data_index()) for s in sections)
         self.lines = dict((s.name, s.lines) for s in sections)
         self.datalist = dict((s.name, s.datalist) for s in sections)
+        self._query = None
+
+    @property
+    def query(self):
+        if self._query is None:
+            self._query = from_dict(self.datalist)
+        return self._query
 
     @property
     def running_processes(self):

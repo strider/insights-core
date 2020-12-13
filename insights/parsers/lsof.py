@@ -62,6 +62,7 @@ Examples:
 
 from .. import add_filter, Scannable, parser, CommandParser
 from insights.specs import Specs
+from insights.parsr.query import from_dict
 
 add_filter(Specs.lsof, ['COMMAND'])
 
@@ -125,8 +126,12 @@ class Lsof(CommandParser, Scannable):
         """
         Parse the content for the entire input file.
         """
+        entries = []
         for line in self._start(content):
-            yield self._parse_line(line)
+            entry = self._parse_line(line)
+            entries.append(entry)
+            yield entry
+        self.query = from_dict({"entries": entries})
 
     @classmethod
     def collect_keys(cls, result_key, **kwargs):
