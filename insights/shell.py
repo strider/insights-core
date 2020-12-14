@@ -879,7 +879,7 @@ def main():
 
     if not args.no_defaults:
         load_default_plugins()
-        dr.load_components("insights.parsers", "insights.combiners")
+        dr.load_components("insights.parsers", "insights.combiners", "insights.models")
 
     load_packages(parse_plugins(args.plugins))
     _handle_config(args.config)

@@ -99,6 +99,7 @@ def load_default_components():
     load_default_plugins()
     dr.load_components("insights.parsers", continue_on_error=False)
     dr.load_components("insights.combiners", continue_on_error=False)
+    dr.load_components("insights.models", continue_on_error=False)
 
 
 def preload_components(comps):

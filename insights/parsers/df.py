@@ -22,7 +22,6 @@ DiskFree_AL - command ``df -al``
 from collections import namedtuple
 from insights import parser, CommandParser
 from insights.parsers import ParseException
-from insights.parsr.query import from_dict
 from insights.specs import Specs
 
 Record = namedtuple("Record", ['filesystem', 'total', 'used', 'available', 'capacity', 'mounted_on'])
@@ -110,7 +109,6 @@ class DiskFree(CommandParser):
         super(DiskFree, self).__init__(context)
         self.filesystems = {}
         self.mounts = {}
-        self._query = None
         for datum in self.data:
             if datum.filesystem not in self.filesystems:
                 self.filesystems[datum.filesystem] = []
@@ -168,20 +166,6 @@ class DiskFree(CommandParser):
             self.raw_block_size = block_size
             self.block_size = _digital_block_size(block_size)
         self.data = parse_df_lines(content)
-
-    @property
-    def query(self):
-        if self._query is None:
-            def fix(model):
-                res = [dict(zip(i._fields, i)) for i in model.data]
-                results = []
-                for r in res:
-                    for k in ["available", "capacity", "total", "used"]:
-                        r[k] = 0.0 if r[k] == "-" else float(r[k].rstrip("%"))
-                    results.append(r)
-                return results
-            self._query = from_dict({"disks": fix(self)})
-        return self._query
 
     @property
     def filesystem_names(self):

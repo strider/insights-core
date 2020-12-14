@@ -28,6 +28,7 @@ with open(json_path) as fp:
 dr.load_components("insights.specs.default")
 dr.load_components("insights.parsers")
 dr.load_components("insights.combiners")
+dr.load_components("insights.models")
 
 
 for package in sys.argv[2:]:

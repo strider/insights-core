@@ -70,7 +70,6 @@ Examples:
 """
 import json
 import re
-import yaml
 from collections import defaultdict
 
 import six
@@ -78,8 +77,7 @@ import warnings
 
 from ..util import rsplit
 from .. import parser, get_active_lines, CommandParser
-from .rpm_vercmp import rpm_version_compare, _rpm_vercmp
-from insights.parsr.query import from_dict
+from .rpm_vercmp import rpm_version_compare
 from insights.specs import Specs
 
 
@@ -144,54 +142,6 @@ KNOWN_ARCHITECTURES = [
 This list is taken from the PDC (Product Definition Center) available
 here https://pdc.fedoraproject.org/rest_api/v1/arches/.
 """
-
-Dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
-
-
-class _RPMString(str):
-
-    def __lt__(self, other):
-        return _rpm_vercmp(self, other) < 0
-
-    def __ne__(self, other):
-        return not self == other
-
-    def __gt__(self, other):
-        return _RPMString(other).__lt__(self)
-
-    def __ge__(self, other):
-        return not self.__lt__(other)
-
-    def __le__(self, other):
-        return not _RPMString(other).__lt__(self)
-
-
-def _RPMString_representer(dumper, data):
-    # https://yaml.org/type/str.html
-    return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
-
-
-yaml.add_representer(_RPMString, _RPMString_representer, Dumper=Dumper)
-
-
-def _to_queryable(model):
-    results = []
-
-    def fix(pkg):
-        return {
-            "name": pkg.name,
-            "version": _RPMString(pkg.version),
-            "release": _RPMString(pkg.release),
-            "arch": pkg.arch,
-            "redhat_signed": pkg.redhat_signed,
-            "epoch": pkg.epoch
-        }
-
-    for _, pkgs in model.packages.items():
-        for pkg in pkgs:
-            results.append(fix(pkg))
-
-    return from_dict({"packages": results})
 
 
 class RpmList(object):
@@ -315,13 +265,6 @@ class InstalledRpms(CommandParser, RpmList):
                             self.unparsed.append(line)
         # Don't want defaultdict's behavior after parsing is complete
         self.packages = dict(packages)
-        self._query = None
-
-    @property
-    def query(self):
-        if self._query is None:
-            self._query = _to_queryable(self)
-        return self._query
 
     @property
     def corrupt(self):

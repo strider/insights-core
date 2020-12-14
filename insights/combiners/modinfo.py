@@ -9,7 +9,6 @@ indexed by the module name.
 
 from insights.core.plugins import combiner
 from insights.parsers.modinfo import ModInfoEach, ModInfoAll
-from insights.parsr.query import from_dict
 from insights import SkipComponent
 
 
@@ -65,13 +64,6 @@ class ModInfo(dict):
         if len(self) == 0:
             raise SkipComponent("No Parsed Contents")
         self._query = None
-
-    @property
-    def query(self):
-        if self._query is None:
-            results = [v for _, v in self.items()]
-            self._query = from_dict({"modules": results})
-        return self._query
 
     @property
     def data(self):

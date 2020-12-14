@@ -110,7 +110,6 @@ Examples:
 """
 
 from .. import Parser, parser, get_active_lines
-from insights.parsr.query import from_dict
 from insights.specs import Specs
 
 
@@ -285,26 +284,6 @@ class MemInfo(Parser):
                 self.data[key.strip().lower()] = int(value.split()[0])
             else:
                 self.data[key.strip().lower()] = int(value.split()[0]) * 1024
-
-    @property
-    def query(self):
-        if self._query is None:
-            res = {}
-            for key in self.sub_classes:
-                try:
-                    res[key] = getattr(self, key).data
-                except AttributeError:
-                    pass
-
-            for _, key in self.mem_keys:
-                try:
-                    res[key] = getattr(self, key)
-                except AttributeError:
-                    pass
-
-            self._query = from_dict(res)
-
-        return self._query
 
     @property
     def used(self):

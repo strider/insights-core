@@ -97,7 +97,6 @@ Examples:
 import re
 from datetime import date
 from .. import LegacyItemAccess, parser, defaults, CommandParser
-from insights.parsr.query import from_dict
 from insights.specs import Specs
 
 
@@ -110,12 +109,6 @@ class DMIDecode(CommandParser, LegacyItemAccess):
     def parse_content(self, content):
         self.data = parse_dmidecode(content, pythonic_keys=True)
         self._query = None
-
-    @property
-    def query(self):
-        if self._query is None:
-            self._query = from_dict(self.data)
-        return self._query
 
     @property
     def system_info(self):

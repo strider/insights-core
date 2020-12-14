@@ -54,8 +54,8 @@ Examples:
 
 from insights.core.plugins import combiner
 from insights.parsers import keyword_search
-from insights.parsers.ps import PsAlxwww, PsAuxww, PsAux, PsAuxcww, PsEo, PsEf, PsEoCmd
 from insights.parsr.query import from_dict
+from insights.parsers.ps import PsAlxwww, PsAuxww, PsAux, PsAuxcww, PsEo, PsEf, PsEoCmd
 
 
 @combiner([PsAlxwww, PsAuxww, PsAux, PsEf, PsAuxcww, PsEo, PsEoCmd])
@@ -129,16 +129,6 @@ class Ps(object):
         self.__convert_data_types()
 
         self._commands = set(row['COMMAND'] for row in self._pid_data.values())
-        self._query = None
-
-    @property
-    def query(self):
-        if self._query is None:
-            def fix(p):
-                return dict((k.replace("%", "").lower(), v) for k, v in p.items())
-
-            self._query = from_dict({"processes": [fix(p) for p in self.processes]})
-        return self._query
 
     @property
     def pids(self):

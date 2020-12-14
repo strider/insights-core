@@ -103,6 +103,7 @@ def main(filename):
     dr.load_components("insights.specs.jdr_archive")
     dr.load_components("insights.parsers")
     dr.load_components("insights.combiners")
+    dr.load_components("insights.models")
 
     parsers = sorted([c for c in dr.DELEGATES if is_parser(c)], key=dr.get_name)
     combiners = sorted([c for c in dr.DELEGATES if is_combiner(c)], key=dr.get_name)
