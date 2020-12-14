@@ -143,7 +143,7 @@ class MountedFileSystems(CommandParser):
             def to_queryable(mnts):
                 def fix(obj):
                     if isinstance(obj, AttributeAsDict):
-                        return {k: fix(v) for k, v in obj.items()}
+                        return dict((k, fix(v)) for k, v in obj.items())
                     elif isinstance(obj, list):
                         return [fix(v) for v in obj]
                     else:
