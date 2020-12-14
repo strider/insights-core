@@ -1,43 +1,45 @@
-from insights import combiner
 from insights.parsers import ethtool
 
-from insights.parsr.query import from_dict
+from insights.parsr.query import from_dict, Result
+from . import queryview
 
 
 def _to_queryable(models):
     results = []
     for m in models:
-        data = m.data.copy()
+        data = {}
+        for k, v in m.data.items():
+            data[k.replace("-", "_")] = v
         data["ifname"] = m.ifname
-        results.append(data)
-    return from_dict({"ifaces": results})
+        results.append(from_dict({"ifaces": data}, src=m))
+    return Result(children=tuple(results))
 
 
-@combiner(ethtool.CoalescingInfo)
+@queryview(ethtool.CoalescingInfo)
 def ethtool_coalescinginfo(models):
     return _to_queryable(models)
 
 
-@combiner(ethtool.Driver)
+@queryview(ethtool.Driver)
 def ethtool_driver(models):
     return _to_queryable(models)
 
 
-@combiner(ethtool.Ethtool)
+@queryview(ethtool.Ethtool)
 def ethtool_ethtool(models):
     return _to_queryable(models)
 
 
-@combiner(ethtool.Features)
+@queryview(ethtool.Features)
 def ethtool_features(models):
     return _to_queryable(models)
 
 
-@combiner(ethtool.Pause)
+@queryview(ethtool.Pause)
 def ethtool_pause(models):
     return _to_queryable(models)
 
 
-@combiner(ethtool.Statistics)
+@queryview(ethtool.Statistics)
 def ethtool_statistics(models):
     return _to_queryable(models)

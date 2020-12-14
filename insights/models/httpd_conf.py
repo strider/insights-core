@@ -1,7 +1,7 @@
-from insights import combiner
 from insights.combiners.httpd_conf import HttpdConfTree
+from . import queryview
 
 
-@combiner(HttpdConfTree)
+@queryview(HttpdConfTree)
 def httpd_conf(tree):
     return tree.doc

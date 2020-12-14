@@ -1,9 +1,9 @@
-from insights import combiner
 from insights.combiners.ps import Ps
 from insights.parsr.query import from_dict
+from .import queryview
 
 
-@combiner(Ps)
+@queryview(Ps)
 def ps(model):
     def fix(p):
         return {k.replace("%", "").lower(): v for k, v in p.items()}

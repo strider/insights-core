@@ -1,8 +1,8 @@
-from insights import combiner
 from insights.parsers.netstat import Netstat
 from insights.parsr.query import from_dict
+from . import queryview
 
 
-@combiner(Netstat)
+@queryview(Netstat)
 def netstat(n):
-    return from_dict(n.datalist)
+    return from_dict(n.datalist, src=n)

@@ -1,9 +1,13 @@
-from insights import combiner
-from insights.combiners.modinfo import ModInfo
-from insights.parsr.query import from_dict
+from insights.parsers.modinfo import ModInfoAll, ModInfoEach
+from insights.parsr.query import from_dict, Result
+from . import queryview
 
 
-@combiner(ModInfo)
-def modinfo(m):
-    results = [v for _, v in m.items()]
-    return from_dict({"modules": results})
+@queryview([ModInfoAll, ModInfoEach])
+def modinfo(mi_all, mi_each):
+    res = []
+    models = mi_all or mi_each
+    for m in models:
+        for _, v in m.items():
+            res.append(from_dict({"modules": v}, src=m))
+    return Result(children=tuple(res))

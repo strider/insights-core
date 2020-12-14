@@ -1,6 +1,7 @@
-from insights import combiner
 from insights.parsers import df as _df
-from insights.parsr.query import from_dict
+from insights.parsr.query import from_dict, Result
+
+from . import queryview
 
 
 def fix(model):
@@ -13,21 +14,24 @@ def fix(model):
     return results
 
 
-@combiner(_df.DiskFree_AL)
+@queryview(_df.DiskFree_AL)
 def df_al(model):
-    return from_dict({"disks": fix(model)})
+    res = (from_dict({"disks": fix(model)}, src=model),)
+    return Result(children=res)
 
 
-@combiner(_df.DiskFree_ALP)
+@queryview(_df.DiskFree_ALP)
 def df_alP(model):
-    return from_dict({"disks": fix(model)})
+    res = (from_dict({"disks": fix(model)}, src=model),)
+    return Result(children=res)
 
 
-@combiner([df_al, df_alP])
+@queryview(_df.DiskFree_LI)
+def df_li(model):
+    res = (from_dict({"disks": fix(model)}, src=model),)
+    return Result(children=res)
+
+
+@queryview([df_al, df_alP])
 def df(al, alP):
     return al or alP
-
-
-@combiner(_df.DiskFree_LI)
-def df_li(model):
-    return from_dict({"disks": fix(model)})

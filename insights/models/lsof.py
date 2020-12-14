@@ -1,6 +1,6 @@
-from insights import combiner
 from insights.specs import Specs
 from insights.parsr.query import from_dict
+from . import queryview
 
 
 class LSOFParser(object):
@@ -61,7 +61,7 @@ class LSOFParser(object):
             yield self._parse_line(line)
 
 
-@combiner(Specs.lsof)
+@queryview(Specs.lsof)
 def lsof(ctx):
     results = []
     for r in LSOFParser().parse(ctx.content):

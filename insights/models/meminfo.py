@@ -1,9 +1,9 @@
-from insights import combiner
 from insights.parsers.meminfo import MemInfo
 from insights.parsr.query import from_dict
+from . import queryview
 
 
-@combiner(MemInfo)
+@queryview(MemInfo)
 def meminfo(m):
     res = {}
     for key in m.sub_classes:
@@ -18,4 +18,4 @@ def meminfo(m):
         except AttributeError:
             pass
 
-    return from_dict(res)
+    return from_dict(res, src=m)

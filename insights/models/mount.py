@@ -1,6 +1,6 @@
-from insights import combiner
 from insights.parsers import mount
 from insights.parsr.query import from_dict
+from . import queryview
 
 
 def _fix(obj):
@@ -12,11 +12,11 @@ def _fix(obj):
         return obj
 
 
-@combiner(mount.Mount)
+@queryview(mount.Mount)
 def mounts(mnts):
-    return from_dict({"mounts": [_fix(r) for r in mnts.rows]})
+    return from_dict({"mounts": [_fix(r) for r in mnts.rows]}, src=mnts)
 
 
-@combiner(mount.ProcMounts)
+@queryview(mount.ProcMounts)
 def proc_mounts(mnts):
-    return from_dict({"mounts": [_fix(r) for r in mnts.rows]})
+    return from_dict({"mounts": [_fix(r) for r in mnts.rows]}, src=mnts)

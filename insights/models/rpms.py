@@ -1,10 +1,10 @@
 import yaml
 
-from insights import combiner
 from insights.parsers.installed_rpms import InstalledRpms
 from insights.parsers.rpm_vercmp import _rpm_vercmp
 
 from insights.parsr.query import from_dict
+from . import queryview
 
 
 Dumper = getattr(yaml, "CSafeDumper", yaml.SafeDumper)
@@ -36,7 +36,7 @@ def RPMString_representer(dumper, data):
 yaml.add_representer(RPMString, RPMString_representer, Dumper=Dumper)
 
 
-@combiner(InstalledRpms)
+@queryview(InstalledRpms)
 def rpms(model):
     results = []
 
@@ -54,4 +54,4 @@ def rpms(model):
         for pkg in pkgs:
             results.append(fix(pkg))
 
-    return from_dict({"packages": results})
+    return from_dict({"packages": results}, src=model)

@@ -1,8 +1,8 @@
-from insights import combiner
 from insights.parsers.dmidecode import DMIDecode
 from insights.parsr.query import from_dict
+from . import queryview
 
 
-@combiner(DMIDecode)
+@queryview(DMIDecode)
 def dmidecode(d):
-    return from_dict(d.data)
+    return from_dict(d.data, src=d)

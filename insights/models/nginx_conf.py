@@ -1,7 +1,7 @@
-from insights import combiner
 from insights.combiners.nginx_conf import NginxConfTree
+from . import queryview
 
 
-@combiner(NginxConfTree)
+@queryview(NginxConfTree)
 def httpd_conf(tree):
     return tree.doc
