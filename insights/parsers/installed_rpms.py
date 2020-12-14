@@ -80,7 +80,6 @@ from .. import parser, get_active_lines, CommandParser
 from .rpm_vercmp import rpm_version_compare
 from insights.specs import Specs
 
-
 # This list of architectures is taken from PDC (Product Definition Center):
 # https://pdc.fedoraproject.org/rest_api/v1/arches/
 KNOWN_ARCHITECTURES = [

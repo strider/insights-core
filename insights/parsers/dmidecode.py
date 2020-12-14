@@ -108,7 +108,6 @@ class DMIDecode(CommandParser, LegacyItemAccess):
 
     def parse_content(self, content):
         self.data = parse_dmidecode(content, pythonic_keys=True)
-        self._query = None
 
     @property
     def system_info(self):
