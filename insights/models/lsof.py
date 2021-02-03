@@ -51,6 +51,7 @@ class LSOFParser(object):
         middle_dict = self._split_middle(rest[:self.name_idx - len(command)])
         middle_dict["command"] = command.strip()
         middle_dict["name"] = name.strip()
+        middle_dict["pid"] = int(middle_dict["pid"])
         return middle_dict
 
     def parse(self, content):
@@ -63,8 +64,5 @@ class LSOFParser(object):
 
 @queryview(Specs.lsof)
 def lsof(ctx):
-    results = []
-    for r in LSOFParser().parse(ctx.content):
-        results.append(r)
-
+    results = list(LSOFParser().parse(ctx.content))
     return from_dict({"entries": results})
