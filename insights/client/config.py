@@ -221,6 +221,10 @@ DEFAULT_OPTS = {
         # non-CLI
         'default': 'DEBUG'
     },
+    'number_of_logs' : {
+        # non-cli
+        'default': 3
+    }
     'net_debug': {
         'default': False,
         'opt': ['--net-debug'],

@@ -43,7 +43,7 @@ def get_file_handler(config):
     elif not os.path.exists(log_dir):
         os.makedirs(log_dir, 0o700)
     file_handler = logging.handlers.RotatingFileHandler(
-        log_file, backupCount=3)
+        log_file, backupCount=config.number_of_logs)
     file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     return file_handler
 
