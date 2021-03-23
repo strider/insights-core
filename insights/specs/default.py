@@ -39,6 +39,7 @@ from insights.parsers.mount import Mount
 from insights.specs import Specs
 import datetime
 
+from functools import cmp_to_key
 
 logger = logging.getLogger(__name__)
 
@@ -964,7 +965,125 @@ class DefaultSpecs(Specs):
     yum_log = simple_file("/var/log/yum.log")
     yum_repolist = simple_command("/usr/bin/yum -C --noplugins repolist")
     yum_repos_d = glob_file("/etc/yum.repos.d/*.repo")
-    yum_updateinfo = simple_command("/usr/bin/yum -C updateinfo list")
+    # yum_updateinfo = simple_command("/usr/bin/yum -C updateinfo list")
+    @datasource(HostContext)
+    def yum_updateinfo(broker):
+        UpdatesManager = None
+
+        class YumManager:
+            def __init__(self):
+                self.base = yum.YumBase()
+                self.base.doGenericSetup(cache=1)
+                self.releasever = self.base.conf.yumvar['releasever']
+                self.basearch = self.base.conf.yumvar['basearch']
+                self.packages = []
+                self.repos = []
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+            @staticmethod
+            def pkg_cmp(a, b):
+                vercmp = a.verCMP(b)
+                if vercmp != 0:
+                    return vercmp
+                if a.repoid != b.repoid:
+                    return -1 if a.repoid < b.repoid else 1
+                return 0
+
+            def sorted_pkgs(self, pkgs):
+                return sorted(pkgs, key=cmp_to_key(self.pkg_cmp))
+
+            def load(self):
+                self.base.doRepoSetup()
+                self.base.doSackSetup()
+                self.packages = self.base.pkgSack.returnPackages()
+                self.repos = self.base.repos.repos
+
+            def enabled_repos(self):
+                return [repo.id for repo in self.base.repos.listEnabled()]
+
+            def installed_packages(self):
+                return self.base.rpmdb.returnPackages()
+
+            def updates(self, pkg):
+                nevra = pkg.nevra
+                updates_list = []
+                for upg in self.base.pkgSack.returnPackages(patterns=[pkg.na]):
+                    if upg.verGT(pkg):
+                        updates_list.append(upg)
+                return nevra, updates_list
+
+            @staticmethod
+            def pkg_nevra(pkg):
+                return "{}-{}:{}-{}.{}".format(pkg.name, pkg.epoch, pkg.version,
+                                               pkg.release, pkg.arch)
+
+            @staticmethod
+            def pkg_repo(pkg):
+                return pkg.repoid
+
+            def advisory(self, pkg):
+                adv = self.base.upinfo.get_notice(pkg.nvr)
+                return adv.get_metadata()['update_id'] if adv else None
+
+            @staticmethod
+            def last_update():
+                return 0
+
+        try:
+            import dnf
+            import hawkey
+            import rpm
+            UpdatesManager = DnfManager
+        except ImportError:
+            try:
+                import yum
+                from yum import updateinfo
+                UpdatesManager = YumManager
+            except ImportError:
+                pass
+
+        if UpdatesManager is None:
+            raise SkipException('Neither DNF nor Yum modules present')
+
+        with UpdatesManager() as umgr:
+            response = {
+                'releasever': umgr.releasever,
+                'basearch': umgr.basearch,
+                'repositry_list': umgr.enabled_repos(),
+                'update_list': {},
+            }
+            data = {'package_list': umgr.installed_packages()}
+            updates = {}
+            for pkg in data['package_list']:
+                (nevra, updates_list) = umgr.updates(pkg)
+                updates[nevra] = updates_list
+
+            for (nevra, update_list) in updates.items():
+                if update_list:
+                    out_list = []
+                    for pkg in umgr.sorted_pkgs(update_list):
+                        pkg_dict = {
+                            'package': umgr.pkg_nevra(pkg),
+                            'repository': umgr.pkg_repo(pkg),
+                            'basearch': response['basearch'],
+                            'releasever': response['releasever'],
+                        }
+                        erratum = umgr.advisory(pkg)
+                        if erratum:
+                            pkg_dict['erratum'] = erratum
+                        out_list.append(pkg_dict)
+                    response['update_list'][nevra] = {'available_updates': out_list}
+            ts = umgr.last_update()
+            if ts:
+                response['metadata_time'] = time.strftime('%FT%TZ', time.gmtime(ts))
+
+        return DatasourceProvider(content=json.dumps(response), relative_path='insights_commands/yum_updateinfo_list')
+
     zipl_conf = simple_file("/etc/zipl.conf")
     rpm_format = format_rpm()
     installed_rpms = simple_command("/bin/rpm -qa --qf '%s'" % rpm_format, context=HostContext)
