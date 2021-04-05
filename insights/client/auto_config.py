@@ -76,10 +76,7 @@ def set_auto_configuration(config, hostname, ca_cert, proxy, is_satellite, is_st
         logger.debug('Auto-configured base_url: %s', config.base_url)
     else:
         # connected directly to RHSM
-        if is_stage:
-            config.base_url = hostname + '/api'
-        else:
-            config.base_url = hostname + '/r/insights'
+        config.base_url = hostname + '/api'
         logger.debug('Auto-configured base_url: %s', config.base_url)
         logger.debug('Not connected to Satellite, skipping branch_info')
         # direct connection to RHSM, skip verify_connectivity
@@ -151,14 +148,14 @@ def _try_satellite6_configuration(config):
 
         # Directly connected to Red Hat, use cert auth directly with the api
         if _is_rhn_or_rhsm(rhsm_hostname):
-            # URL changes. my favorite
-            logger.debug("Connected to Red Hat Directly, using cert-api")
-            rhsm_hostname = 'cert-api.access.redhat.com'
+            logger.debug("Connected to Red Hat Directly, using cert.cloud.redhat.com")
+            rhsm_hostname = 'cert.cloud.redhat.com'
+            config.legacy_upload = False
+            config.cert_verify = True
             rhsm_ca = None
         elif _is_staging_rhsm(rhsm_hostname):
             logger.debug('Connected to staging RHSM, using cert.cloud.stage.redhat.com')
             rhsm_hostname = 'cert.cloud.stage.redhat.com'
-            # never use legacy upload for staging
             config.legacy_upload = False
             config.cert_verify = True
             is_stage = True
