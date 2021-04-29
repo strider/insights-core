@@ -9,7 +9,7 @@ from logging import getLogger
 from distutils.version import LooseVersion
 from insights.client.utilities import get_version_info
 from insights.client.apps.ansible.playbook_verifier.contrib import gnupg
-from insights.client.apps.ansible.playbook_verifier.contrib import oyaml as yaml
+from insights.client.apps.ansible.playbook_verifier.contrib import ruamel_yaml
 from insights.client.constants import InsightsConstants as constants
 
 __all__ = ("loadPlaybookYaml", "verify", "PlaybookVerificationError")
@@ -20,6 +20,12 @@ VERSIONING_URL = 'https://cloud.redhat.com/api/v1/static/egg_version'
 EXCLUDABLE_VARIABLES = ['hosts', 'vars']
 
 logger = getLogger(__name__)
+
+yaml = ruamel_yaml.main.YAML(typ='rt')
+yaml.indent(mapping=2, sequence=4, offset=2)
+yaml.default_flow_style = False
+yaml.preserve_quotes = True
+yaml.width = 200
 
 
 class PlaybookVerificationError(Exception):
