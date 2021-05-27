@@ -14,7 +14,9 @@ from .. import package_info
 from . import client
 from .constants import InsightsConstants as constants
 from .config import InsightsConfig
+from .connection import InsightsConnection
 from .auto_config import try_auto_configuration
+from .support import registration_check
 from .utilities import (delete_registered_file,
                         delete_unregistered_file,
                         write_to_disk,
@@ -22,7 +24,8 @@ from .utilities import (delete_registered_file,
                         get_tags,
                         write_tags,
                         migrate_tags,
-                        get_parent_process)
+                        get_parent_process,
+                        generate_machine_id)
 
 NETWORK = constants.custom_network_log_level
 logger = logging.getLogger(__name__)
@@ -68,7 +71,7 @@ class InsightsClient(object):
         def _init_connection(self, *args, **kwargs):
             # setup a request session
             if not self.config.offline and not self.session:
-                self.connection = client.get_connection(self.config)
+                self.connection = InsightsConnection(self.config)
                 self.session = self.connection.session
             return func(self, *args, **kwargs)
         return _init_connection
@@ -95,7 +98,7 @@ class InsightsClient(object):
         """
             returns (dict): {'remote_leaf': -1, 'remote_branch': -1}
         """
-        return client.get_branch_info(self.config, self.connection)
+        return client.get_branch_info(self.config)
 
     @_net
     def get_egg_url(self):
@@ -385,7 +388,8 @@ class InsightsClient(object):
             logger.debug("Bypassing rule update due to config "
                 "running in offline mode or auto updating turned off.")
         else:
-            return client.update_rules(self.config, self.connection)
+            pc = InsightsUploadConf(self.config, conn=self.connection)
+            return pc.get_conf_update()
 
     @_net
     def collect(self):
@@ -497,7 +501,7 @@ class InsightsClient(object):
                  'unreg_date': Date the machine was unregistered | None,
                  'unreachable': API could not be reached}
         """
-        return client.get_registration_status(self.config, self.connection)
+        return registration_check(self.connection)
 
     @_net
     def set_display_name(self, display_name):
@@ -528,7 +532,7 @@ class InsightsClient(object):
             logger.debug('Cached branch_info file does not exist.')
 
     def get_machine_id(self):
-        return client.get_machine_id()
+        return generate_machine_id()
 
     def clear_local_registration(self):
         '''

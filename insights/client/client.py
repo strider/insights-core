@@ -130,7 +130,7 @@ def _legacy_handle_registration(config, pconn):
     logger.debug('Machine-id: %s', generate_machine_id(new=config.reregister))
 
     # check registration with API
-    check = get_registration_status(config, pconn)
+    check = registration_check(pconn)
 
     for m in check['messages']:
         logger.debug(m)
@@ -189,17 +189,6 @@ def handle_registration(config, pconn):
         return _legacy_handle_registration(config, pconn)
 
 
-def get_registration_status(config, pconn):
-    '''
-        Handle the registration process
-        Returns:
-            True - machine is registered
-            False - machine is unregistered
-            None - could not reach the API
-    '''
-    return registration_check(pconn)
-
-
 # -LEGACY-
 def _legacy_handle_unregistration(config, pconn):
     """
@@ -210,7 +199,7 @@ def _legacy_handle_unregistration(config, pconn):
         get_scheduler(config).remove_scheduling()
         delete_cache_files()
 
-    check = get_registration_status(config, pconn)
+    check = registration_check(pconn)
 
     for m in check['messages']:
         logger.debug(m)
@@ -249,19 +238,6 @@ def handle_unregistration(config, pconn):
         write_unregistered_file()
         delete_cache_files()
     return unreg
-
-
-def get_machine_id():
-    return generate_machine_id()
-
-
-def update_rules(config, pconn):
-    if not pconn:
-        raise ValueError('ERROR: Cannot update rules in --offline mode. '
-                         'Disable auto_update in config file.')
-
-    pc = InsightsUploadConf(config, conn=pconn)
-    return pc.get_conf_update()
 
 
 def get_branch_info(config):
@@ -303,10 +279,6 @@ def collect(config, pconn):
     dc.run_collection(collection_rules, rm_conf, branch_info, blacklist_report)
     output = dc.done(collection_rules, rm_conf)
     return output
-
-
-def get_connection(config):
-    return InsightsConnection(config)
 
 
 def _legacy_upload(config, pconn, tar_file, content_type, collection_duration=None):
