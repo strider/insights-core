@@ -32,23 +32,23 @@ def test_correct_format_ok_validtypes():
     # files and commands (file-redaction.yaml)
     parsed_data = {'commands': ['/bin/test', '/bin/test2'], 'files': ['/var/lib/aaa', '/var/lib/nnn']}
     expected_keys = ('commands', 'files')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
     assert not err
-    assert msg is None
+    assert err is None
 
     # patterns w. list of strings (file-content-redaction.yaml)
     parsed_data = {'patterns': ['abcd', 'bcdef'], 'keywords': ['example', 'example2']}
     expected_keys = ('patterns', 'keywords')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
     assert not err
-    assert msg is None
+    assert err is None
 
     # patterns w. regex object (file-content-redaction.yaml)
     parsed_data = {'patterns': {'regex': ['abcd', 'bcdef']}, 'keywords': ['example', 'example2']}
     expected_keys = ('patterns', 'keywords')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
     assert not err
-    assert msg is None
+    assert err is None
 
 
 def test_config_verification_ok_emptyvalues():
@@ -58,9 +58,9 @@ def test_config_verification_ok_emptyvalues():
     '''
     parsed_data = {'patterns': None, 'keywords': ['abc', 'def']}
     expected_keys = ('patterns', 'keywords')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
     assert not err
-    assert msg is None
+    assert err is None
 
 
 def test_config_verification_bad_invalidkeys():
@@ -69,9 +69,9 @@ def test_config_verification_bad_invalidkeys():
     '''
     parsed_data = {'commands': None, 'files': None, 'somekey': None}
     expected_keys = ('commands', 'files')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
     assert err
-    assert 'Unknown section' in msg
+    assert 'Unknown section' in err
 
 
 def test_correct_format_bad_keys_in_wrong_file():
@@ -82,9 +82,9 @@ def test_correct_format_bad_keys_in_wrong_file():
     '''
     parsed_data = {'files': ['/etc/example'], 'patterns': ['abc', 'def']}
     expected_keys = ('files', 'commands')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
     assert err
-    assert 'Unknown section(s) in ' + conf_file_redaction_file in msg
+    assert 'Unknown section(s) in ' + conf_file_redaction_file in err
 
 
 def test_correct_format_bad_invalidtypes():
@@ -94,9 +94,9 @@ def test_correct_format_bad_invalidtypes():
     '''
     parsed_data = {'commands': 'somestring', 'files': ['/var/lib/aaa', '/var/lib/bbb']}
     expected_keys = ('commands', 'files')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_redaction_file)
     assert err
-    assert 'must be a list of strings' in msg
+    assert 'must be a list of strings' in err
 
 
 def test_correct_format_bad_patterns_keysnoregex():
@@ -107,9 +107,9 @@ def test_correct_format_bad_patterns_keysnoregex():
     '''
     parsed_data = {'patterns': {'wrongkey': ['a(bc)', 'nextregex']}}
     expected_keys = ('patterns', 'keywords')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
     assert err
-    assert 'contains an object but the "regex" key was not specified' in msg
+    assert 'contains an object but the "regex" key was not specified' in err
 
 
 def test_correct_format_bad_patterns_invalidkey():
@@ -119,9 +119,9 @@ def test_correct_format_bad_patterns_invalidkey():
     '''
     parsed_data = {'patterns': {'regex': [], 'wrongkey': ['a(bc)', 'nextregex']}}
     expected_keys = ('patterns', 'keywords')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
     assert err
-    assert 'Only "regex" is valid' in msg
+    assert 'Only "regex" is valid' in err
 
 
 def test_correct_format_bad_patterns_regexinvalidtype():
@@ -132,9 +132,9 @@ def test_correct_format_bad_patterns_regexinvalidtype():
     '''
     parsed_data = {'patterns': {'regex': 'a(b)'}}
     expected_keys = ('patterns', 'keywords')
-    err, msg = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
+    err = correct_format(parsed_data, expected_keys, conf_file_content_redaction_file)
     assert err
-    assert 'regex section under patterns must be a list of strings' in msg
+    assert 'regex section under patterns must be a list of strings' in err
 
 
 def test_load_yaml_ok():

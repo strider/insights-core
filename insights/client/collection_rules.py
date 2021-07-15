@@ -26,8 +26,8 @@ NETWORK = constants.custom_network_log_level
 def correct_format(parsed_data, expected_keys, filename):
     '''
     Ensure the parsed file matches the needed format
-    Returns True, <message> on error
-    Returns False, None on success
+    Returns <message> on error
+    Returns None on success
     '''
     # validate keys are what we expect
     def is_list_of_strings(data):
@@ -47,23 +47,22 @@ def correct_format(parsed_data, expected_keys, filename):
     keys = parsed_data.keys()
     invalid_keys = set(keys).difference(expected_keys)
     if invalid_keys:
-        return True, ('Unknown section(s) in %s: ' % filename + ', '.join(invalid_keys) +
-                      '\nValid sections are ' + ', '.join(expected_keys) + '.')
+        return ('Unknown section(s) in %s: ' % filename + ', '.join(invalid_keys) +
+                '\nValid sections are ' + ', '.join(expected_keys) + '.')
 
     # validate format (lists of strings)
     for k in expected_keys:
         if k in parsed_data:
             if k == 'patterns' and isinstance(parsed_data['patterns'], dict):
                 if 'regex' not in parsed_data['patterns']:
-                    return True, 'Patterns section contains an object but the "regex" key was not specified.'
+                    return 'Patterns section contains an object but the "regex" key was not specified.'
                 if 'regex' in parsed_data['patterns'] and len(parsed_data['patterns']) > 1:
-                    return True, 'Unknown keys in the patterns section. Only "regex" is valid.'
+                    return 'Unknown keys in the patterns section. Only "regex" is valid.'
                 if not is_list_of_strings(parsed_data['patterns']['regex']):
-                    return True, 'regex section under patterns must be a list of strings.'
-                continue
-            if not is_list_of_strings(parsed_data[k]):
-                return True, '%s section must be a list of strings.' % k
-    return False, None
+                    return 'regex section under patterns must be a list of strings.'
+            elif not is_list_of_strings(parsed_data[k]):
+                return '%s section must be a list of strings.' % k
+    return None
 
 
 def load_yaml(filename):
@@ -259,7 +258,7 @@ class InsightsUploadConf(object):
         """
         Get config from local config file, first try cache, then fallback.
         """
-        for conf_file in [self.collection_rules_file, self.fallback_file]:
+        for conf_file in (self.collection_rules_file, self.fallback_file):
             logger.debug("trying to read conf from: " + conf_file)
             conf = self.try_disk(conf_file, self.gpg)
 
@@ -378,12 +377,12 @@ class InsightsUploadConf(object):
             logger.warning('WARNING: %s', e)
         loaded = load_yaml(fname)
         if fname == self.redaction_file:
-            err, msg = correct_format(loaded, ('commands', 'files', 'components'), fname)
+            err = correct_format(loaded, ('commands', 'files', 'components'), fname)
         elif fname == self.content_redaction_file:
-            err, msg = correct_format(loaded, ('patterns', 'keywords'), fname)
+            err = correct_format(loaded, ('patterns', 'keywords'), fname)
         if err:
             # YAML is correct but doesn't match the format we need
-            raise RuntimeError('ERROR: ' + msg)
+            raise RuntimeError('ERROR: ' + err)
         return loaded
 
     def get_rm_conf(self):

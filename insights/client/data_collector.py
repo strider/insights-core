@@ -286,13 +286,13 @@ class DataCollector(object):
                 for s in cmd_specs:
                     if s['command'] in rm_commands:
                         logger.warn("WARNING: Skipping command %s", s['command'])
-                        continue
-                    cmd_spec = InsightsCommand(self.config, s, self.mountpoint)
-                    self.archive.add_to_archive(cmd_spec)
-                    collection_stats[s['command']] = {
-                        'return_code': cmd_spec.return_code,
-                        'exec_time': cmd_spec.exec_time,
-                        'output_size': cmd_spec.output_size
+                    else:
+                        cmd_spec = InsightsCommand(self.config, s, self.mountpoint)
+                        self.archive.add_to_archive(cmd_spec)
+                        collection_stats[s['command']] = {
+                            'return_code': cmd_spec.return_code,
+                            'exec_time': cmd_spec.exec_time,
+                            'output_size': cmd_spec.output_size
                     }
         for f in conf['files']:
             if f['file'] in rm_files or f.get('symbolic_name') in rm_files:

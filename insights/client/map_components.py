@@ -51,10 +51,8 @@ def map_rm_conf_to_components(rm_conf):
     conversion_map = {}
     longest_key_len = 0
 
-    for section in ['commands', 'files']:
-        if section not in rm_conf:
-            continue
-        for key in rm_conf[section]:
+    for section in ('commands', 'files'):
+        for key in rm_conf.get(section, []):
             if section == 'commands':
                 symbolic_name = _search_uploader_json(['commands'], key)
             elif section == 'files':
