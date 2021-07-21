@@ -94,7 +94,7 @@ DEFAULT_OPTS = {
     },
     'cert_verify': {
         # non-CLI
-        'default': None,
+        'default': True,
     },
     'check_results': {
         'default': False,
