@@ -152,8 +152,8 @@ def _try_satellite6_configuration(config):
         # Directly connected to Red Hat, use cert auth directly with the api
         if _is_rhn_or_rhsm(rhsm_hostname):
             # URL changes. my favorite
-            logger.debug("Connected to Red Hat Directly, using cert-api")
-            rhsm_hostname = 'cert-api.access.redhat.com'
+            logger.debug("Connected to Red Hat Directly, using cert.cloud.redhat.com")
+            rhsm_hostname = 'cert.cloud.redhat.com'
             rhsm_ca = None
         elif _is_staging_rhsm(rhsm_hostname):
             logger.debug('Connected to staging RHSM, using cert.cloud.stage.redhat.com')
@@ -250,7 +250,6 @@ def try_auto_configuration(config):
     if not config.legacy_upload and re.match(r'(.+)?\/r\/insights', config.base_url):
         # When to append /platform
         #   base url ~= cloud.redhat.com/r/insights
-        #   base url ~= cert-api.access.redhat.com/r/insights
         #   base url ~= satellite.host.example.com/redhat_access/r/insights
         # When not to append /platform
         #   base url ~= cloud.redhat.com/api

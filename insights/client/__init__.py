@@ -143,16 +143,8 @@ class InsightsClient(object):
         egg_gpg_url = self.config.egg_gpg_path
         if egg_url is None:
             egg_url = '/v1/static{0}/insights-core.egg'.format(egg_release)
-            # if self.config.legacy_upload:
-            #     egg_url = '/v1/static/core/insights-core.egg'
-            # else:
-            #     egg_url = '/static/insights-core.egg'
         if egg_gpg_url is None:
             egg_gpg_url = '/v1/static{0}/insights-core.egg.asc'.format(egg_release)
-            # if self.config.legacy_upload:
-            #     egg_gpg_url = '/v1/static/core/insights-core.egg.asc'
-            # else:
-            #     egg_gpg_url = '/static/insights-core.egg.asc'
         # run fetch for egg
         updated = self._fetch(egg_url,
                               constants.core_etag_file,
@@ -182,18 +174,7 @@ class InsightsClient(object):
                 current_etag = fp.read().strip()
                 logger.debug('Found etag %s', current_etag)
 
-        # it's only temporary. I promise. this is the worst timeline
-        # all for a phone popup
-        if self.config.legacy_upload:
-            url = self.connection.base_url + path
-            # verify = self.config.cert_verify
-        else:
-            url = self.connection.base_url.split('/platform')[0] + path
-            # if self.config.cert_verify is True:
-            #     # dont overwrite satellite cert
-            #     self.cert_verify = os.path.join(
-            #         constants.default_conf_dir,
-            #         'cert-api.access.redhat.com.pem')
+        url = self.connection.base_url + path
 
         # Setup the new request for core retrieval
         logger.debug('Making request to %s for new core', url)
