@@ -104,15 +104,25 @@ class InsightsUploadConf(object):
         """
         Load config from parent
         """
+        # InsightsConfig
         self.config = config
+
+        # .fallback.json
         self.fallback_file = constants.collection_fallback_file
+
+        # denylist config
         self.remove_file = config.remove_file
         self.redaction_file = config.redaction_file
         self.content_redaction_file = config.content_redaction_file
+
+        # tags
         self.tags_file = config.tags_file
+
+        # .cache.json
         self.collection_rules_file = constants.collection_rules_file
+
+        # location of new uploader.json
         self.collection_rules_url = self.config.collection_rules_url
-        self.gpg = self.config.gpg
 
         # initialize an attribute to store the content of uploader.json
         #   once it is loaded and verified
@@ -135,16 +145,108 @@ class InsightsUploadConf(object):
                     self.collection_rules_url = conn.base_url.split('/platform')[0] + '/v1/static/uploader.v2.json'
             self.conn = conn
 
-    def validate_gpg_sig(self, path, sig=None):
+    def update(self):
         """
-        Validate the collection rules
+        Download new uploader.json from prod.
+
+        Returns
+            True  - success
+            False - failure
+        """
+        # download new files
+        downloaded_json = self._fetch_json()
+        if not downloaded_json:
+            return False
+        if self.config.gpg:
+            downloaded_gpg = self._fetch_gpg()
+            if not downloaded_gpg:
+                return False
+            # write downloaded data to file to verify with gpg
+            with NamedTemporaryFile(suffix=".json") as json_path, NamedTemporaryFile(suffix=".asc") as gpg_path:
+                json_path.write(downloaded_json.encode("utf-8"))
+                json_path.file.flush()
+                gpg_path.write(downloaded_gpg.encode("utf-8"))
+                gpg_path.file.flush()
+                # verify the downloaded data
+                verified = self.verify(json_path.name, gpg_path.name)
+        else:
+            verified = True
+        if verified:
+            # if OK, save to disk and cache as an attribute
+            self.save(downloaded_json, downloaded_gpg)
+            self.uploader_json = json.loads(downloaded_json)
+            return True
+        else:
+            return False
+
+    def _fetch_json(self):
+        """
+        Download the new uploader.json from prod
+
+        Returns:
+            (dict) on success
+            None on failure
+        """
+        logger.debug("Attemping to download collection rules from %s",
+                     self.collection_rules_url)
+        logger.log(NETWORK, "GET %s", self.collection_rules_url)
+        try:
+            req = self.conn.session.get(
+                self.collection_rules_url, headers=({'accept': 'application/json'}))
+            if req.status_code == 200:
+                logger.debug("Successfully downloaded collection rules")
+                return req.text
+            else:
+                logger.error("ERROR: Could not download dynamic configuration")
+                logger.error("Debug Info: \nConf status: %s", req.status_code)
+                logger.error("Debug Info: \nConf message: %s", req.text)
+                return None
+        except requests.ConnectionError as e:
+            logger.error(
+                "ERROR: Could not download dynamic configuration: %s", e)
+            return None
+
+    def _fetch_gpg(self):
+        '''
+        Download gpg signature for uploader.json
+
+        Returns
+            GPG signature string on success
+            None on failure
+        '''
+        logger.debug("Attemping to download collection "
+                     "rules GPG signature from %s",
+                     self.collection_rules_url + ".asc")
+
+        headers = ({'accept': 'text/plain'})
+        logger.log(NETWORK, "GET %s", self.collection_rules_url + '.asc')
+        try:
+            config_sig = self.conn.session.get(self.collection_rules_url + '.asc',
+                                            headers=headers)
+            if config_sig.status_code == 200:
+                logger.debug("Successfully downloaded GPG signature")
+                return config_sig.text
+            else:
+                logger.error("ERROR: Download of GPG Signature failed!")
+                logger.error("Sig status: %s", config_sig.status_code)
+                return None
+        except requests.ConnectionError as e:
+            logger.error(
+                "ERROR: Could not download GPG signature: %s", e)
+            return None
+
+    def verify(self, json_path, gpg_path):
+        """
+        Validate the uploader.json
+
+        Returns:
+            True on success
+            False on failure
         """
         logger.debug("Verifying GPG signature of Insights configuration")
-        if sig is None:
-            sig = path + ".asc"
         command = ("/usr/bin/gpg --no-default-keyring "
                    "--keyring " + constants.pub_gpg_path +
-                   " --verify " + sig + " " + path)
+                   " --verify " + gpg_path + " " + json_path)
         if not six.PY3:
             command = command.encode('utf-8', 'ignore')
         args = shlex.split(command)
@@ -156,150 +258,49 @@ class InsightsUploadConf(object):
         logger.debug("STDERR: %s", stderr)
         logger.debug("Status: %s", proc.returncode)
         if proc.returncode:
-            logger.error("ERROR: Unable to validate GPG signature: %s", path)
+            logger.error("ERROR: Unable to validate GPG signature: %s", json_path)
             return False
         else:
             logger.debug("GPG signature verified")
             return True
 
-    def try_disk(self, path, gpg=True):
-        """
-        Try to load json off disk
-        """
-        if not os.path.isfile(path):
-            return
-
-        if not gpg or self.validate_gpg_sig(path):
-            stream = open(path, 'r')
-            json_stream = stream.read()
-            if len(json_stream):
-                try:
-                    json_config = json.loads(json_stream)
-                    return json_config
-                except ValueError:
-                    logger.error("ERROR: Invalid JSON in %s", path)
-                    return False
-            else:
-                logger.warn("WARNING: %s was an empty file", path)
-                return
-
-    def get_collection_rules(self, raw=False):
-        """
-        Download the collection rules
-        """
-        logger.debug("Attemping to download collection rules from %s",
-                     self.collection_rules_url)
-
-        logger.log(NETWORK, "GET %s", self.collection_rules_url)
-        try:
-            req = self.conn.session.get(
-                self.collection_rules_url, headers=({'accept': 'text/plain'}))
-
-            if req.status_code == 200:
-                logger.debug("Successfully downloaded collection rules")
-
-                json_response = NamedTemporaryFile()
-                json_response.write(req.text.encode('utf-8'))
-                json_response.file.flush()
-            else:
-                logger.error("ERROR: Could not download dynamic configuration")
-                logger.error("Debug Info: \nConf status: %s", req.status_code)
-                logger.error("Debug Info: \nConf message: %s", req.text)
-                return None
-        except requests.ConnectionError as e:
-            logger.error(
-                "ERROR: Could not download dynamic configuration: %s", e)
-            return None
-
-        if self.gpg:
-            self.get_collection_rules_gpg(json_response)
-
-        self.write_collection_data(self.collection_rules_file, req.text)
-
-        if raw:
-            return req.text
-        else:
-            return json.loads(req.text)
-
-    def fetch_gpg(self):
-        logger.debug("Attemping to download collection "
-                     "rules GPG signature from %s",
-                     self.collection_rules_url + ".asc")
-
-        headers = ({'accept': 'text/plain'})
-        logger.log(NETWORK, "GET %s", self.collection_rules_url + '.asc')
-        config_sig = self.conn.session.get(self.collection_rules_url + '.asc',
-                                           headers=headers)
-        if config_sig.status_code == 200:
-            logger.debug("Successfully downloaded GPG signature")
-            return config_sig.text
-        else:
-            logger.error("ERROR: Download of GPG Signature failed!")
-            logger.error("Sig status: %s", config_sig.status_code)
-            return False
-
-    def get_collection_rules_gpg(self, collection_rules):
-        """
-        Download the collection rules gpg signature
-        """
-        sig_text = self.fetch_gpg()
-        sig_response = NamedTemporaryFile(suffix=".asc")
-        sig_response.write(sig_text.encode('utf-8'))
-        sig_response.file.flush()
-        self.validate_gpg_sig(collection_rules.name, sig_response.name)
-        self.write_collection_data(self.collection_rules_file + ".asc", sig_text)
-
-    def write_collection_data(self, path, data):
+    def save(self, downloaded_json, downloaded_gpg):
         """
         Write collections rules to disk
         """
-        flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
-        fd = os.open(path, flags, 0o600)
-        with os.fdopen(fd, 'w') as dyn_conf_file:
-            dyn_conf_file.write(data)
+        with open(self.collection_rules_file, "wb") as json_path, open(self.collection_rules_file + ".asc", "wb") as gpg_path:
+            json_path.write(downloaded_json.encode("utf-8"))
+            gpg_path.write(downloaded_gpg.encode("utf-8"))
 
-    def get_conf_file(self):
+    def load(self):
         """
         Get config from local config file, first try cache, then fallback.
+
+        Returns:
+            dict on success
+
+        Raises:
+            RuntimeError on failure
         """
         if self.uploader_json:
+            # already loaded, return cached
             return self.uploader_json
 
         for conf_file in [self.collection_rules_file, self.fallback_file]:
             logger.debug("trying to read conf from: " + conf_file)
-            conf = self.try_disk(conf_file, self.gpg)
-
+            if not self.config.gpg or self.verify(conf_file, conf_file + ".asc"):
+                with open(conf_file, "r") as f:
+                    try:
+                        conf = json.load(f)
+                    except ValueError:
+                        logger.error("ERROR: Invalid JSON in %s", path)
+                        conf = None
             if conf:
-                version = conf.get('version', None)
-                if version is None:
-                    raise ValueError("ERROR: Could not find version in json")
-
-                conf['file'] = conf_file
                 logger.debug("Success reading config")
                 logger.debug(json.dumps(conf))
                 self.uploader_json = conf
                 return conf
-
         raise RuntimeError("ERROR: Unable to download conf or read it from disk!")
-
-    def get_conf_update(self):
-        """
-        Get updated config from URL.
-        """
-        dyn_conf = self.get_collection_rules()
-
-        if not dyn_conf:
-            return self.get_conf_file()
-
-        version = dyn_conf.get('version', None)
-        if version is None:
-            raise ValueError("ERROR: Could not find version in json")
-
-        dyn_conf['file'] = self.collection_rules_file
-        logger.debug("Success reading config")
-        config_hash = hashlib.sha1(json.dumps(dyn_conf).encode('utf-8')).hexdigest()
-        logger.debug('sha1 of config: %s', config_hash)
-        return dyn_conf
 
     def get_rm_conf_old(self):
         """
@@ -410,14 +411,14 @@ class InsightsUploadConf(object):
             #   try to use remove.conf
             self.rm_conf = self.get_rm_conf_old()
             if self.config.core_collect:
-                self.rm_conf = map_rm_conf_to_components(self.rm_conf, self.get_conf_file())
+                self.rm_conf = map_rm_conf_to_components(self.rm_conf, self.load())
             return self.rm_conf
 
         # remove Nones, empty strings, and empty lists
         filtered_rm_conf = dict((k, v) for k, v in rm_conf.items() if v)
         self.rm_conf = filtered_rm_conf
         if self.config.core_collect:
-            self.rm_conf = map_rm_conf_to_components(self.rm_conf, self.get_conf_file())
+            self.rm_conf = map_rm_conf_to_components(self.rm_conf, self.load())
         return self.rm_conf
 
     def get_tags_conf(self):
@@ -501,9 +502,13 @@ class InsightsUploadConf(object):
 
 if __name__ == '__main__':
     from .config import InsightsConfig
-    config = InsightsConfig().load_all()
-    uploadconf = InsightsUploadConf(config)
-    uploadconf.validate()
+    from .connection import InsightsConnection
+    config = InsightsConfig(verbose=True)
+    conn = InsightsConnection(config)
+    uploadconf = InsightsUploadConf(config, conn)
+    # print(uploadconf.update())
+    print(uploadconf.load())
+    # print(uploadconf.uploader_json)
     # report = uploadconf.create_report()
 
     # print(report)
