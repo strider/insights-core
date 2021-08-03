@@ -261,7 +261,7 @@ def update_rules(config, pconn):
                          'Disable auto_update in config file.')
 
     pc = InsightsUploadConf(config, conn=pconn)
-    return pc.get_conf_update()
+    return pc.update()
 
 
 def get_branch_info(config):
@@ -285,6 +285,7 @@ def collect(config, pconn):
     pc = InsightsUploadConf(config)
     output = None
 
+    collection_rules = pc.load()
     rm_conf = pc.get_rm_conf()
     blacklist_report = pc.create_report()
     if rm_conf:
@@ -294,10 +295,8 @@ def collect(config, pconn):
 
     msg_name = determine_hostname(config.display_name)
     if config.core_collect:
-        collection_rules = None
         dc = CoreCollector(config, archive)
     else:
-        collection_rules = pc.get_conf_file()
         dc = DataCollector(config, archive)
     logger.info('Starting to collect Insights data for %s', msg_name)
     dc.run_collection(collection_rules, rm_conf, branch_info, blacklist_report)

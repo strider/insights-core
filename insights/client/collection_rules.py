@@ -170,6 +170,7 @@ class InsightsUploadConf(object):
                 # verify the downloaded data
                 verified = self.verify(json_path.name, gpg_path.name)
         else:
+            downloaded_gpg = None
             verified = True
         if verified:
             # if OK, save to disk and cache as an attribute
@@ -268,9 +269,12 @@ class InsightsUploadConf(object):
         """
         Write collections rules to disk
         """
-        with open(self.collection_rules_file, "wb") as json_path, open(self.collection_rules_file + ".asc", "wb") as gpg_path:
-            json_path.write(downloaded_json.encode("utf-8"))
-            gpg_path.write(downloaded_gpg.encode("utf-8"))
+        if downloaded_json:
+            with open(self.collection_rules_file, "wb") as json_path:
+                json_path.write(downloaded_json.encode("utf-8"))
+        if downloaded_gpg:
+            with open(self.collection_rules_file + ".asc", "wb") as gpg_path:
+                gpg_path.write(downloaded_gpg.encode("utf-8"))
 
     def load(self):
         """
