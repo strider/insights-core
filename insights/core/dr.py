@@ -62,6 +62,7 @@ import traceback
 from collections import defaultdict
 from functools import reduce as _reduce
 
+from insights.core.context import SerializedArchiveContext
 from insights.contrib import importlib
 from insights.contrib.toposort import toposort_flatten
 from insights.util import defaults, enum, KeyPassingDefaultDict
@@ -954,6 +955,17 @@ def run(components=None, broker=None):
     components = components or COMPONENTS[GROUPS.single]
     components = _determine_components(components)
     broker = broker or Broker()
+
+    # If a SerializedArchiveContext then data found in the archive's
+    # ./meta_data directory are prepopulated in the broker as Specs so
+    # no need to collect them again
+    if broker.get(SerializedArchiveContext) is not None:
+        remove_deps = []
+        for comp, deps in components.items():
+            if comp in broker:
+                remove_deps.extend(deps)
+        for dep in remove_deps:
+            components.pop(dep, None)
 
     for component in run_order(components):
         start = time.time()
