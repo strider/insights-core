@@ -74,7 +74,7 @@ Name = WS >> String(string.ascii_letters + string.digits + "-._") << WS
 
 LeftBrace = WS >> Char('[') << WS
 RightBrace = WS >> Char(']') << WS
-InstanceName = Name | UnsignedInt | QuotedString
+InstanceName = QuotedString | UnsignedInt | Name
 InstanceNames = LeftBrace >> InstanceName.sep_by(Comma | WS) << RightBrace
 MetricSpec = Name + Opt(InstanceNames, default=[])
 
