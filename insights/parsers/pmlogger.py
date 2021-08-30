@@ -52,8 +52,8 @@ Preamble = Opt(Log) >> ((OnStates + Interval) | OtherStates)
 #         (or comma) separated.  If there is only one metric
 #         specification in the list, the braces are optional.
 
-LeftBracket = WS >> Char("{") << WS
-RightBracket = WS >> Char("}") << WS
+LeftBrace = WS >> Char("{") << WS
+RightBrace = WS >> Char("}") << WS
 Comma = WS >> Char(",") << WS
 
 #    7.   A metric specification consists of a metric name optionally
@@ -72,14 +72,14 @@ Comma = WS >> Char(",") << WS
 
 Name = WS >> String(string.ascii_letters + string.digits + "-._") << WS
 
-LeftBrace = WS >> Char('[') << WS
-RightBrace = WS >> Char(']') << WS
+LeftBracket = WS >> Char('[') << WS
+RightBracket = WS >> Char(']') << WS
 InstanceName = QuotedString | UnsignedInt | Name
-InstanceNames = LeftBrace >> InstanceName.sep_by(Comma | WS) << RightBrace
+InstanceNames = LeftBracket >> InstanceName.sep_by(Comma | WS) << RightBracket
 MetricSpec = Name + Opt(InstanceNames, default=[])
 
 OneMetricSpec = MetricSpec.map(lambda s: [s])
-MultipleMetricSpecs = LeftBracket >> MetricSpec.sep_by(Comma | WS) << RightBracket
+MultipleMetricSpecs = LeftBrace >> MetricSpec.sep_by(Comma | WS) << RightBrace
 MetricSpecs = (OneMetricSpec | MultipleMetricSpecs).map(dict)
 
 LogSpec = Preamble + MetricSpecs
