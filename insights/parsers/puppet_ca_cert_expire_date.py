@@ -20,32 +20,27 @@ Examples::
 
 from insights import parser
 from insights.specs import Specs
-from insights.parsers import SkipException
 from insights.parsers.ssl_certificate import CertificateInfo
+from insights.util import deprecated
 
 
 @parser(Specs.puppet_ca_cert_expire_date)
 class PuppetCertExpireDate(CertificateInfo):
     """
+    Read the ``openssl x509 -in /etc/puppetlabs/puppet/ssl/ca/ca_crt.pem -enddate -noout``
+    and set the date to property ``expire_date``.
+
     .. note::
         Please refer to its super-class :class:`insights.parsers.ssl_certificate.CertificateInfo` for more
         details.
 
-    .. warning::
-        The attribute expire_date is deprecated, please get the value from the dictionary directly instead.
-
-    Read the ``openssl x509 -in /etc/puppetlabs/puppet/ssl/ca/ca_crt.pem -enddate -noout``
-    and set the date to property ``expire_date``.
-
-    Attributes:
-        expire_date (datetime): The date when the puppet ca cert will be expired
-
-    Raises:
-        SkipException: when notAfter isn't in the output
     """
-
-    def parse_content(self, content):
-        super(PuppetCertExpireDate, self).parse_content(content)
-        if 'notAfter' not in self:
-            raise SkipException("Cannot get the puppet ca cert expire info")
-        self.expire_date = self['notAfter'].datetime
+    @property
+    def expire_date(self):
+        """
+        .. warning::
+            The attribute expire_date is deprecated, use 'expiration_date'
+            instead.
+        """
+        deprecated(self.expire_date, "Use 'expiration_date' instead.")
+        return self.expiration_date.datetime

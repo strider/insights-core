@@ -22,8 +22,6 @@ FileName= /etc/pki/consumer/cert.pem
 notAfter=Jan  1 04:59:59 2022 GMT
 FileName= /etc/pki/entitlement/3343502840335059594.pem
 notAfter=Aug 31 02:19:59 2017 GMT
-FileName= /etc/pki/consumer/cert.pem
-notAfter=Jan  1 04:59:59 2022 GMT
 FileName= /etc/pki/entitlement/2387590574974617178.pem
 """.strip()
 
@@ -41,16 +39,6 @@ FileName= /etc/pki/ca-trust/extracted/pem/email-ca-bundle.pem
 unable to load certificate
 140463633168248:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:701:Expecting: TRUSTED CERTIFICATE
 notAfter=Dec  9 10:55:38 2017 GMT
-FileName= /etc/pki/consumer/cert.pem
-notAfter=Jan  1 04:59:59 2022 GMT
-""".strip()
-
-CRT5 = """
-notAfter=May 25 16:39:40 2019 GMT
-FileName= /etc/pki/ca-trust/extracted/pem/email-ca-bundle.pem
-notAfter=Dec  9 10:55:38 2017 GMT
-unable to load certificate
-140463633168248:error:0906D06C:PEM routines:PEM_read_bio:no start line:pem_lib.c:701:Expecting: TRUSTED CERTIFICATE
 FileName= /etc/pki/consumer/cert.pem
 notAfter=Jan  1 04:59:59 2022 GMT
 """.strip()
@@ -73,11 +61,10 @@ CRT7 = """
 
 
 def test_certificates_enddate():
-
     Cert1 = certificates_enddate.CertificatesEnddate(context_wrap(CRT1))
     assert PATH1 in Cert1.certificates_path
     expiration_date = Cert1.expiration_date(PATH1)
-    assert expiration_date.str == 'May 25 16:39:40 2019'
+    assert expiration_date.str == 'May 25 16:39:40 2019 GMT'
     assert expiration_date.datetime == datetime(2019, 5, 25, 16, 39, 40)
 
     Cert3 = certificates_enddate.CertificatesEnddate(context_wrap(CRT3))
@@ -90,10 +77,6 @@ def test_certificates_enddate():
             '/etc/pki/consumer/cert.pem',
             '/etc/pki/ca-trust/extracted/pem/email-ca-bundle.pem']))
 
-    Cert5 = certificates_enddate.CertificatesEnddate(context_wrap(CRT5))
-    assert (set(Cert5.certificates_path) == set([
-            '/etc/pki/ca-trust/extracted/pem/email-ca-bundle.pem']))
-
 
 def test_certificates_enddate_unparsable_datatime():
     Cert6 = certificates_enddate.CertificatesEnddate(context_wrap(CRT6))
@@ -103,17 +86,17 @@ def test_certificates_enddate_unparsable_datatime():
     assert Cert6.expiration_date('/etc/pki/consumer/cert.pem').datetime is None
     assert (Cert6.expiration_date(
             '/etc/pki/ca-trust/extracted/pem/email-ca-bundle.pem').str ==
-            'May 25 16:39:40')
+            'May 25 16:39:40 2019')
     assert (Cert6.expiration_date(
         '/etc/pki/ca-trust/extracted/pem/email-ca-bundle.pem').datetime is None)
     assert (Cert6.expiration_date('/etc/pki/email-ca-bundle.pem') is None)
 
 
 def test_doc():
-    cert_enddate = certificates_enddate.CertificatesEnddate(context_wrap(CRT1))
+    cert_enddate = certificates_enddate.CertificatesInfo(context_wrap(CRT1))
 
     globs = {
-        'cert_enddate': cert_enddate
+        'certs': cert_enddate
     }
     failed, tested = doctest.testmod(certificates_enddate, globs=globs)
     assert failed == 0

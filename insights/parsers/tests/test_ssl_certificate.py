@@ -10,7 +10,7 @@ CERTIFICATE_OUTPUT1 = """
 issuer= /C=US/ST=North Carolina/L=Raleigh/O=Katello/OU=SomeOrgUnit/CN=a.b.c.com
 notBefore=Dec  7 07:02:33 2020 GMT
 notAfter=Jan 18 07:02:33 2038 GMT
-subject= /C=US/ST=North Carolina/L=Raleigh/O=Katello/OU=SomeOrgUnit/CN=a.b.c.com
+subject= Carolina/L=Raleigh/O=Katello/OU=SomeOrgUnit/CN=a.b.c.com
 """
 
 CERTIFICATE_CHAIN_OUTPUT1 = """
@@ -96,21 +96,21 @@ def test_certificate_chain_exception():
 def test_certificate_info():
     cert = ssl_certificate.CertificateInfo(context_wrap(CERTIFICATE_OUTPUT1))
     assert cert['issuer'] == '/C=US/ST=North Carolina/L=Raleigh/O=Katello/OU=SomeOrgUnit/CN=a.b.c.com'
-    assert cert['notBefore'].str == 'Dec  7 07:02:33 2020'
-    assert cert['notAfter'].str == 'Jan 18 07:02:33 2038'
+    assert cert['notBefore'] == 'Dec  7 07:02:33 2020'
+    assert cert['notAfter'] == 'Jan 18 07:02:33 2038'
     assert cert['subject'] == '/C=US/ST=North Carolina/L=Raleigh/O=Katello/OU=SomeOrgUnit/CN=a.b.c.com'
 
 
 def test_certificates_chain():
     certs = ssl_certificate.CertificateChain(context_wrap(CERTIFICATE_CHAIN_OUTPUT1))
     assert len(certs) == 2
-    assert certs.earliest_expiry_date.str == 'Jan 18 07:02:43 2018'
+    assert certs.earliest_expiry_date.str == 'Jan 18 07:02:43 2018 GMT'
     for cert in certs:
-        if cert['notAfter'].str == certs.earliest_expiry_date.str:
+        if cert['notAfter'] == certs.earliest_expiry_date.str:
             assert cert['issuer'] == '/C=US/ST=North Carolina/L=Raleigh/O=Katello/OU=SomeOrgUnit/CN=test.d.com'
-            assert cert['notBefore'].str == 'Nov 30 07:02:42 2020'
+            assert cert['notBefore'] == 'Nov 30 07:02:42 2020 GMT'
             assert cert['subject'] == '/C=US/ST=North Carolina/O=Katello/OU=SomeOrgUnit/CN=test.c.com'
-            assert cert['notBefore'].str == 'Nov 30 07:02:42 2020'
+            assert cert['notBefore'] == 'Nov 30 07:02:42 2020 GMT'
 
     certs = ssl_certificate.CertificateChain(context_wrap(CERTIFICATE_CHAIN_OUTPUT2))
     assert len(certs) == 1
@@ -125,11 +125,11 @@ def test_satellite_ca_chain():
     assert len(certs) == 3
     assert certs.earliest_expiry_date.str == 'Jan 18 07:02:43 2018'
     assert certs[0]['subject'] == '/C=US/ST=North Carolina/L=Raleigh/O=Katello/OU=SomeOrgUnit/CN=test.a.com'
-    assert certs[0]['notAfter'].str == 'Jan 18 07:02:33 2038'
+    assert certs[0]['notAfter'] == 'Jan 18 07:02:33 2038'
     assert certs[1]['subject'] == '/C=US/ST=North Carolina/O=Katello/OU=SomeOrgUnit/CN=test.b.com'
-    assert certs[1]['notAfter'].str == 'Jan 18 07:02:43 2018'
+    assert certs[1]['notAfter'] == 'Jan 18 07:02:43 2018'
     assert certs[2]['subject'] == '/C=US/ST=North Carolina/O=Katello/OU=SomeOrgUnit/CN=test.c.com'
-    assert certs[2]['notAfter'].str == 'Jan 18 07:02:43 2048'
+    assert certs[2]['notAfter'] == 'Jan 18 07:02:43 2048'
 
 
 def test_rhsm_katello_default_ca():
