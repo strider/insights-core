@@ -111,7 +111,8 @@ class RedHatRelease(object):
     """
     def __init__(self, uname, rh_rel):
         self.major = self.minor = self.rhel = None
-        if uname and uname.redhat_release.major != -1:
+        # Only when Uname is not available, use the RedhatRlease
+        if uname:
             self.major = uname.redhat_release.major
             self.minor = uname.redhat_release.minor
             self.rhel = '{0}.{1}'.format(self.major, self.minor)
@@ -120,7 +121,7 @@ class RedHatRelease(object):
             self.minor = rh_rel.minor
             self.rhel = rh_rel.version
 
-        if self.rhel is None:
+        if self.major == -1 or self.rhel is None:
             raise SkipComponent("Unable to determine release.")
 
         self.rhel6 = self.rhel if self.major == 6 else None
